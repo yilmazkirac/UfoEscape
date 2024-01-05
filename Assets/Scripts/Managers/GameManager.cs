@@ -1,59 +1,86 @@
-using System.Collections;
-using TMPro;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    public static GameManager Instance;
+
+    [Header("SCORE--------------")]
     public int CoinPrice;
-    public GameObject RestartPanel;
-    public GameObject Player;
-    public GameObject Cam;
-    public GameObject GamePanel;
-    public int Life;
     public int Scoreint;
-    public GameObject[] ObjePool;
-    public GameObject[] WayPool;
-    public GameObject SpawnPoint;
-
-
-    [SerializeField] private TextMeshProUGUI scoreText;
     private float Score;
 
-    private void Start()
+    [Header("POOLS--------------")]
+    public GameObject[] ObjePool;
+    public GameObject[] WayPool;
+
+    [Header("PLAYER--------------")]
+    public GameObject Player;
+    private void Awake()
+    {
+
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+
+    private void OnEnable()
+    {
+        Subscribe();
+    }
+    private void Subscribe()
+    {
+        CoreGameSignals.Instance.OnRestartGame += Res;
+    }
+    private void Res()
     {
         Score = 0;
         PlayerPrefs.SetInt("Score", 0);
-        Life = 2;
+
+        WayPool[0].transform.position = new Vector3(0, 0, 0);
+        WayPool[1].transform.position = new Vector3(0, 0, 100.7f);
+        WayPool[2].transform.position = new Vector3(0, 0, 201.4f);
+
+        SetStage(WayPool[0]);
+        SetStage(WayPool[1]);
+        SetStage(WayPool[2]);
+
+        foreach (var item in ObjePool)
+        {
+            item.GetComponent<CionReset>().SetCoinReset();
+        }
+    }
+    private void UnSubscribe()
+    {
+        CoreGameSignals.Instance.OnRestartGame -= Res;
+    }
+    private void OnDisable()
+    {
+        UnSubscribe();
+    }
+    private void Start()
+    {
         Restart();
     }
 
     private void Update()
     {
+        UpdateScore();
+    }
+    private void UpdateScore()
+    {
         if (Player.GetComponent<PlayerMovementController>().CharacterSpeed > 0)
         {
             Score += 30 * Time.deltaTime;
             Scoreint = (int)Score + PlayerPrefs.GetInt("Score");
-            scoreText.text = "Score : " + Scoreint.ToString();
+            UIManager.Instance.ScoreText.text = "Score : " + Scoreint.ToString();
         }
     }
-
     public void Restart()
     {
-        RestartPanel.SetActive(false);
-        GamePanel.SetActive(true);
-        Score = 0;
-        PlayerPrefs.SetInt("Score", 0);
-        Life = 2;
-        Player.GetComponent<PlayerMovementController>().wayIndex = 1;
-        Player.GetComponent<PlayerMovementController>().CharacterSpeed = 0;
-        Player.transform.position = SpawnPoint.transform.position;
-        Cam.GetComponent<CameraController>().isFirstScene = false;
-        WayPool[0].transform.position = new Vector3(0, 0, 0);
-        WayPool[1].transform.position = new Vector3(0, 0, 100.7f);
-        WayPool[2].transform.position = new Vector3(0, 0, 201.4f);
-        SetStage(WayPool[0]);
-        SetStage(WayPool[1]);
-        SetStage(WayPool[2]);
+       CoreGameSignals.Instance.OnRestartGame?.Invoke();
     }
 
     public void SetWay(GameObject stage)
@@ -63,7 +90,6 @@ public class GameManager : MonoBehaviour
 
     public void SetStage(GameObject stage)
     {
-
         for (int i = 0; i < 2; i++)
         {
             foreach (GameObject obj in ObjePool)
@@ -77,27 +103,10 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-
-    public void ReLife()
-    {
-        StartCoroutine(ReLifeIE());
-    }
-
-    IEnumerator ReLifeIE()
-    {
-        yield return new WaitForSeconds(5f);
-        Life = 2;
-    }
     public void StartGame()
     {
-        Player.GetComponent<PlayerMovementController>().CharacterSpeed = 5;
-        Invoke("Speed", 0.4f);
-        Cam.GetComponent<CameraController>().isFirstScene = true;
-        GamePanel.gameObject.SetActive(false);
-    }
-    void Speed()
-    {
         Player.GetComponent<PlayerMovementController>().CharacterSpeed = 15;
+        UIManager.Instance.AllPanelDeActive(UIManager.Instance.InGamePanel);
     }
 }
 

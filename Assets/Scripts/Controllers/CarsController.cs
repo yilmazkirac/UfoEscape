@@ -6,7 +6,7 @@ public class CarsController : MonoBehaviour
     public bool Move;
     public Transform FirstPos;
 
-    internal void ResetCar()
+    public void ResetCar()
     {
         Move = false;
         transform.position = FirstPos.position;

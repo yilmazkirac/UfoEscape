@@ -1,33 +1,69 @@
 using System.Collections;
+using System.Security.Cryptography;
 using DG.Tweening;
 using UnityEngine;
 
 
 public class PlayerMovementController : MonoBehaviour
 {
-    public float CharacterSpeed = 5f;
-    public bool isJetpack;
-    public bool isGrounded;
-    public CharacterController CharCont;
 
+    [Header("PLAYER SETTINGS")]
+    public CharacterController CharCont;
+    public float CharacterSpeed = 5f;
+    public float JumpForce = 12f, GravityMod = 2.5f;
     public Transform GroundChechPoint;
     public LayerMask GroundLayer;
-    public float JumpForce = 12f, GravityMod = 2.5f;
-
-    [SerializeField] private GameObject trail;
-
     private Vector3 newScale;
     private Vector3 scale;
     private bool isDuck;
     public Vector3 movement;
     public Vector3 moveDir;
-
-
     public int wayIndex;
-   
-    int[] wayIndexPoint= new int[3] {-3,0,3};
+    int[] wayIndexPoint = new int[3] { -3, 0, 3 };
 
+    [Header("SKILS------")]
+    public bool isJetpack;
+    public bool isGrounded;
+
+    [Header("PLAYER ANIMATOR")]
     [SerializeField] private Animator Anim;
+
+    [Header("OTHER ")]
+    [SerializeField] private GameObject trail;
+    public Transform SpawnPoint;
+
+    private void OnEnable()
+    {
+        Subscribe();
+    }
+    private void Subscribe()
+    {
+        CoreGameSignals.Instance.OnRestartGame += CharacterPropReset;
+    }
+
+    private void CharacterPropReset()
+    {
+        wayIndex = 1;
+        CharacterSpeed = 0;
+        transform.position = SpawnPoint.position;
+    }
+
+
+    private void UnSubscribe()
+    {
+        CoreGameSignals.Instance.OnRestartGame -= CharacterPropReset;
+    }
+    private void OnDisable()
+    {
+        UnSubscribe();
+    }
+
+
+
+
+
+
+    
 
     private void Start()
     {
@@ -38,8 +74,7 @@ public class PlayerMovementController : MonoBehaviour
 
 
     private void Update()
-    {
-    
+    {    
         if (isJetpack)
         {
             JetPackOn();
@@ -109,7 +144,7 @@ public class PlayerMovementController : MonoBehaviour
 
         if (!isJetpack)
         {
-           moveDir = new Vector3(0, 0, 1);
+            moveDir = new Vector3(0, 0, 1);
             float yVel = movement.y;
             movement = ((transform.forward * moveDir.z) + (transform.right * moveDir.x)).normalized * CharacterSpeed;
 
